@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { 
   FadeInDown, 
@@ -7,7 +7,6 @@ import Animated, {
   useAnimatedStyle, 
   withSpring,
   withSequence,
-  withDelay
 } from 'react-native-reanimated';
 import { useState, useEffect } from 'react';
 import { PlayingCard } from './PlayingCard';
@@ -21,60 +20,63 @@ interface GameScreenProps {
 
 type GameState = 'ready' | 'dealing' | 'revealing' | 'result' | 'gameOver';
 
-interface Card {
-  suit: '♠' | '♥' | '♦' | '♣';
+interface Ship {
+  type: 'destroyer' | 'cruiser' | 'battleship' | 'carrier';
   value: number;
   display: string;
+  symbol: string;
 }
 
-const suits = ['♠', '♥', '♦', '♣'] as const;
-const values = [
-  { value: 2, display: '2' },
-  { value: 3, display: '3' },
-  { value: 4, display: '4' },
-  { value: 5, display: '5' },
-  { value: 6, display: '6' },
-  { value: 7, display: '7' },
-  { value: 8, display: '8' },
-  { value: 9, display: '9' },
-  { value: 10, display: '10' },
-  { value: 11, display: 'J' },
-  { value: 12, display: 'Q' },
-  { value: 13, display: 'K' },
-  { value: 14, display: 'A' },
-];
+const shipTypes = [
+  { type: 'destroyer', value: 2, display: '2', symbol: '🚢' },
+  { type: 'destroyer', value: 3, display: '3', symbol: '🚢' },
+  { type: 'cruiser', value: 4, display: '4', symbol: '⛵' },
+  { type: 'cruiser', value: 5, display: '5', symbol: '⛵' },
+  { type: 'cruiser', value: 6, display: '6', symbol: '⛵' },
+  { type: 'cruiser', value: 7, display: '7', symbol: '⛵' },
+  { type: 'battleship', value: 8, display: '8', symbol: '🛳️' },
+  { type: 'battleship', value: 9, display: '9', symbol: '🛳️' },
+  { type: 'battleship', value: 10, display: '10', symbol: '🛳️' },
+  { type: 'battleship', value: 11, display: 'J', symbol: '🛳️' },
+  { type: 'battleship', value: 12, display: 'Q', symbol: '🛳️' },
+  { type: 'battleship', value: 13, display: 'K', symbol: '🛳️' },
+  { type: 'carrier', value: 14, display: 'A', symbol: '🚁' },
+] as const;
 
-const dealers = [
+const admirals = [
   {
-    name: 'Rookie Rick',
-    avatar: '🤠',
+    name: 'Admiral Rookie',
+    avatar: '👨‍✈️',
     difficulty: 1,
-    specialRule: 'Standard War rules',
+    specialRule: 'Standard naval engagement',
     winReward: 25,
+    fleet: 'Patrol Fleet',
   },
   {
-    name: 'Lady Luck',
-    avatar: '💃',
+    name: 'Captain Storm',
+    avatar: '🧑‍✈️',
     difficulty: 2,
-    specialRule: 'Ties go to dealer',
+    specialRule: 'Ties favor the enemy',
     winReward: 40,
+    fleet: 'Strike Force',
   },
   {
-    name: 'High Roller',
-    avatar: '🎩',
+    name: 'Fleet Admiral',
+    avatar: '👩‍✈️',
     difficulty: 3,
-    specialRule: 'Only face cards',
+    specialRule: 'Capital ships only',
     winReward: 60,
+    fleet: 'Battle Group',
   },
 ];
 
 export function GameScreen({ onNavigate, chips, setChips }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState>('ready');
-  const [currentDealer] = useState(dealers[0]);
-  const [playerCard, setPlayerCard] = useState<Card | null>(null);
-  const [dealerCard, setDealerCard] = useState<Card | null>(null);
+  const [currentAdmiral] = useState(admirals[0]);
+  const [playerShip, setPlayerShip] = useState<Ship | null>(null);
+  const [enemyShip, setEnemyShip] = useState<Ship | null>(null);
   const [playerWins, setPlayerWins] = useState(0);
-  const [dealerWins, setDealerWins] = useState(0);
+  const [enemyWins, setEnemyWins] = useState(0);
   const [round, setRound] = useState(1);
   const [lastResult, setLastResult] = useState<'win' | 'lose' | 'tie' | null>(null);
   const [bet] = useState(10);
@@ -82,13 +84,13 @@ export function GameScreen({ onNavigate, chips, setChips }: GameScreenProps) {
   const cardScale = useSharedValue(1);
   const resultOpacity = useSharedValue(0);
 
-  const generateCard = (): Card => {
-    const suit = suits[Math.floor(Math.random() * suits.length)];
-    const valueData = values[Math.floor(Math.random() * values.length)];
+  const generateShip = (): Ship => {
+    const shipData = shipTypes[Math.floor(Math.random() * shipTypes.length)];
     return {
-      suit,
-      value: valueData.value,
-      display: valueData.display,
+      type: shipData.type,
+      value: shipData.value,
+      display: shipData.display,
+      symbol: shipData.symbol,
     };
   };
 
@@ -99,22 +101,22 @@ export function GameScreen({ onNavigate, chips, setChips }: GameScreenProps) {
     cardScale.value = withSpring(1.1);
     
     setTimeout(() => {
-      const pCard = generateCard();
-      const dCard = generateCard();
+      const pShip = generateShip();
+      const eShip = generateShip();
       
-      setPlayerCard(pCard);
-      setDealerCard(dCard);
+      setPlayerShip(pShip);
+      setEnemyShip(eShip);
       setGameState('revealing');
       
       setTimeout(() => {
         let result: 'win' | 'lose' | 'tie';
         
-        if (pCard.value > dCard.value) {
+        if (pShip.value > eShip.value) {
           result = 'win';
           setPlayerWins(prev => prev + 1);
-        } else if (pCard.value < dCard.value) {
+        } else if (pShip.value < eShip.value) {
           result = 'lose';
-          setDealerWins(prev => prev + 1);
+          setEnemyWins(prev => prev + 1);
         } else {
           result = 'tie';
         }
@@ -130,11 +132,11 @@ export function GameScreen({ onNavigate, chips, setChips }: GameScreenProps) {
         
         setTimeout(() => {
           if (playerWins + (result === 'win' ? 1 : 0) >= 3) {
-            // Player wins the match
-            setChips(prev => prev + currentDealer.winReward);
+            // Player wins the battle
+            setChips(prev => prev + currentAdmiral.winReward);
             setGameState('gameOver');
-          } else if (dealerWins + (result === 'lose' ? 1 : 0) >= 3) {
-            // Dealer wins the match
+          } else if (enemyWins + (result === 'lose' ? 1 : 0) >= 3) {
+            // Enemy wins the battle
             setChips(prev => Math.max(0, prev - bet));
             setGameState('gameOver');
           } else {
@@ -149,10 +151,10 @@ export function GameScreen({ onNavigate, chips, setChips }: GameScreenProps) {
 
   const resetGame = () => {
     setPlayerWins(0);
-    setDealerWins(0);
+    setEnemyWins(0);
     setRound(1);
-    setPlayerCard(null);
-    setDealerCard(null);
+    setPlayerShip(null);
+    setEnemyShip(null);
     setLastResult(null);
     setGameState('ready');
     resultOpacity.value = 0;
@@ -169,143 +171,148 @@ export function GameScreen({ onNavigate, chips, setChips }: GameScreenProps) {
 
   return (
     <LinearGradient
-      colors={['#000000', '#0F0F0F', '#1A0000']}
+      colors={['#020617', '#0F172A', '#1E293B']}
       style={styles.container}
     >
-      {/* Header */}
-      <Animated.View 
-        style={styles.header}
-        entering={FadeInUp.duration(600)}
-      >
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => onNavigate('menu')}
+      {/* CRT Border */}
+      <View style={styles.crtBorder}>
+        {/* Header */}
+        <Animated.View 
+          style={styles.header}
+          entering={FadeInUp.duration(600)}
         >
-          <Text style={styles.backButtonText}>← BACK</Text>
-        </TouchableOpacity>
-        
-        <View style={styles.chipContainer}>
-          <Text style={styles.chipIcon}>🪙</Text>
-          <Text style={styles.chipText}>{chips}</Text>
-        </View>
-      </Animated.View>
-
-      {/* Dealer Section */}
-      <Animated.View 
-        style={styles.dealerSection}
-        entering={FadeInDown.duration(600).delay(100)}
-      >
-        <DealerPortrait dealer={currentDealer} />
-        <Text style={styles.dealerRule}>{currentDealer.specialRule}</Text>
-      </Animated.View>
-
-      {/* Score Tracker */}
-      <Animated.View 
-        style={styles.scoreContainer}
-        entering={FadeInDown.duration(600).delay(200)}
-      >
-        <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>DEALER</Text>
-          <Text style={styles.scoreValue}>{dealerWins}</Text>
-        </View>
-        <View style={styles.roundIndicator}>
-          <Text style={styles.roundText}>ROUND {round}</Text>
-          <Text style={styles.bestOfText}>Best of 5</Text>
-        </View>
-        <View style={styles.scoreBox}>
-          <Text style={styles.scoreLabel}>YOU</Text>
-          <Text style={styles.scoreValue}>{playerWins}</Text>
-        </View>
-      </Animated.View>
-
-      {/* Cards Area */}
-      <Animated.View 
-        style={[styles.cardsContainer, cardAnimatedStyle]}
-        entering={FadeInDown.duration(600).delay(300)}
-      >
-        <View style={styles.cardRow}>
-          <View style={styles.cardSlot}>
-            <Text style={styles.cardLabel}>DEALER</Text>
-            {dealerCard && (
-              <PlayingCard 
-                card={dealerCard} 
-                faceDown={gameState === 'dealing'} 
-              />
-            )}
-          </View>
-          
-          <View style={styles.vsContainer}>
-            <Text style={styles.vsText}>VS</Text>
-          </View>
-          
-          <View style={styles.cardSlot}>
-            <Text style={styles.cardLabel}>YOU</Text>
-            {playerCard && (
-              <PlayingCard 
-                card={playerCard} 
-                faceDown={gameState === 'dealing'} 
-              />
-            )}
-          </View>
-        </View>
-      </Animated.View>
-
-      {/* Result Display */}
-      <Animated.View 
-        style={[styles.resultContainer, resultAnimatedStyle]}
-      >
-        {lastResult && (
-          <Text style={[
-            styles.resultText,
-            lastResult === 'win' && styles.winText,
-            lastResult === 'lose' && styles.loseText,
-            lastResult === 'tie' && styles.tieText,
-          ]}>
-            {lastResult === 'win' && 'YOU WIN!'}
-            {lastResult === 'lose' && 'DEALER WINS'}
-            {lastResult === 'tie' && 'TIE!'}
-          </Text>
-        )}
-      </Animated.View>
-
-      {/* Action Button */}
-      <Animated.View 
-        style={styles.actionContainer}
-        entering={FadeInDown.duration(600).delay(400)}
-      >
-        {gameState === 'gameOver' ? (
-          <View style={styles.gameOverContainer}>
-            <Text style={styles.gameOverText}>
-              {playerWins > dealerWins ? 'VICTORY!' : 'DEFEAT'}
-            </Text>
-            <Text style={styles.rewardText}>
-              {playerWins > dealerWins 
-                ? `+${currentDealer.winReward} chips` 
-                : `-${bet} chips`
-              }
-            </Text>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={resetGame}
-            >
-              <Text style={styles.actionButtonText}>PLAY AGAIN</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
           <TouchableOpacity 
-            style={[
-              styles.actionButton,
-              gameState !== 'ready' && styles.disabledButton
-            ]}
-            onPress={playRound}
-            disabled={gameState !== 'ready'}
+            style={styles.backButton}
+            onPress={() => onNavigate('menu')}
           >
-            <Text style={styles.actionButtonText}>
-              {gameState === 'ready' ? 'DRAW CARDS' : 'DEALING...'}
-            </Text>
+            <Text style={styles.backButtonText}>◄ ABORT</Text>
           </TouchableOpacity>
-        )}
-      </Animated.View>
+          
+          <View style={styles.chipContainer}>
+            <Text style={styles.chipIcon}>⚓</Text>
+            <Text style={styles.chipText}>{chips}</Text>
+          </View>
+        </Animated.View>
+
+        {/* Admiral Section */}
+        <Animated.View 
+          style={styles.admiralSection}
+          entering={FadeInDown.duration(600).delay(100)}
+        >
+          <DealerPortrait dealer={currentAdmiral} />
+          <Text style={styles.admiralRule}>{currentAdmiral.specialRule}</Text>
+          <Text style={styles.fleetName}>{currentAdmiral.fleet}</Text>
+        </Animated.View>
+
+        {/* Battle Status */}
+        <Animated.View 
+          style={styles.scoreContainer}
+          entering={FadeInDown.duration(600).delay(200)}
+        >
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>ENEMY</Text>
+            <Text style={styles.scoreValue}>{enemyWins}</Text>
+          </View>
+          <View style={styles.roundIndicator}>
+            <Text style={styles.roundText}>ENGAGEMENT {round}</Text>
+            <Text style={styles.bestOfText}>Best of 5</Text>
+          </View>
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>FLEET</Text>
+            <Text style={styles.scoreValue}>{playerWins}</Text>
+          </View>
+        </Animated.View>
+
+        {/* Ships Area */}
+        <Animated.View 
+          style={[styles.shipsContainer, cardAnimatedStyle]}
+          entering={FadeInDown.duration(600).delay(300)}
+        >
+          <View style={styles.shipRow}>
+            <View style={styles.shipSlot}>
+              <Text style={styles.shipLabel}>ENEMY VESSEL</Text>
+              {enemyShip && (
+                <PlayingCard 
+                  ship={enemyShip} 
+                  faceDown={gameState === 'dealing'} 
+                />
+              )}
+            </View>
+            
+            <View style={styles.vsContainer}>
+              <Text style={styles.vsText}>⚔️</Text>
+              <Text style={styles.vsSubtext}>VS</Text>
+            </View>
+            
+            <View style={styles.shipSlot}>
+              <Text style={styles.shipLabel}>YOUR VESSEL</Text>
+              {playerShip && (
+                <PlayingCard 
+                  ship={playerShip} 
+                  faceDown={gameState === 'dealing'} 
+                />
+              )}
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Battle Result */}
+        <Animated.View 
+          style={[styles.resultContainer, resultAnimatedStyle]}
+        >
+          {lastResult && (
+            <Text style={[
+              styles.resultText,
+              lastResult === 'win' && styles.winText,
+              lastResult === 'lose' && styles.loseText,
+              lastResult === 'tie' && styles.tieText,
+            ]}>
+              {lastResult === 'win' && '>>> VICTORY <<<'}
+              {lastResult === 'lose' && '>>> DEFEATED <<<'}
+              {lastResult === 'tie' && '>>> STALEMATE <<<'}
+            </Text>
+          )}
+        </Animated.View>
+
+        {/* Action Button */}
+        <Animated.View 
+          style={styles.actionContainer}
+          entering={FadeInDown.duration(600).delay(400)}
+        >
+          {gameState === 'gameOver' ? (
+            <View style={styles.gameOverContainer}>
+              <Text style={styles.gameOverText}>
+                {playerWins > enemyWins ? '>>> MISSION SUCCESS <<<' : '>>> MISSION FAILED <<<'}
+              </Text>
+              <Text style={styles.rewardText}>
+                {playerWins > enemyWins 
+                  ? `+${currentAdmiral.winReward} CREDITS` 
+                  : `-${bet} CREDITS`
+                }
+              </Text>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={resetGame}
+              >
+                <Text style={styles.actionButtonText}>► RETRY MISSION</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity 
+              style={[
+                styles.actionButton,
+                gameState !== 'ready' && styles.disabledButton
+              ]}
+              onPress={playRound}
+              disabled={gameState !== 'ready'}
+            >
+              <Text style={styles.actionButtonText}>
+                {gameState === 'ready' ? '► ENGAGE ENEMY' : 'DEPLOYING...'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </Animated.View>
+      </View>
     </LinearGradient>
   );
 }
@@ -313,6 +320,14 @@ export function GameScreen({ onNavigate, chips, setChips }: GameScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  crtBorder: {
+    flex: 1,
+    margin: 8,
+    borderWidth: 4,
+    borderColor: '#1E3A8A',
+    borderRadius: 12,
+    backgroundColor: 'rgba(30, 58, 138, 0.1)',
   },
   header: {
     flexDirection: 'row',
@@ -324,40 +339,51 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    borderWidth: 1,
+    borderColor: '#475569',
   },
   backButtonText: {
-    color: '#FFD700',
-    fontSize: 16,
+    color: '#FBBF24',
+    fontSize: 14,
+    fontFamily: 'Courier New',
     fontWeight: '600',
   },
   chipContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    backgroundColor: 'rgba(251, 191, 36, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#FFD700',
+    borderWidth: 2,
+    borderColor: '#FBBF24',
   },
   chipIcon: {
     fontSize: 16,
     marginRight: 6,
+    color: '#FBBF24',
   },
   chipText: {
     fontSize: 16,
+    fontFamily: 'Courier New',
     fontWeight: '700',
-    color: '#FFD700',
+    color: '#FBBF24',
   },
-  dealerSection: {
+  admiralSection: {
     alignItems: 'center',
     paddingVertical: 20,
   },
-  dealerRule: {
-    color: '#CCCCCC',
-    fontSize: 14,
-    fontStyle: 'italic',
+  admiralRule: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontFamily: 'Courier New',
     marginTop: 8,
+  },
+  fleetName: {
+    color: '#FBBF24',
+    fontSize: 14,
+    fontFamily: 'Courier New',
+    fontWeight: '600',
+    marginTop: 4,
   },
   scoreContainer: {
     flexDirection: 'row',
@@ -370,46 +396,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scoreLabel: {
-    color: '#888888',
-    fontSize: 12,
+    color: '#64748B',
+    fontSize: 10,
+    fontFamily: 'Courier New',
     fontWeight: '600',
     marginBottom: 4,
   },
   scoreValue: {
-    color: '#FFD700',
+    color: '#FBBF24',
     fontSize: 24,
+    fontFamily: 'Courier New',
     fontWeight: '900',
   },
   roundIndicator: {
     alignItems: 'center',
   },
   roundText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: '#E2E8F0',
+    fontSize: 14,
+    fontFamily: 'Courier New',
     fontWeight: '700',
   },
   bestOfText: {
-    color: '#888888',
-    fontSize: 12,
+    color: '#64748B',
+    fontSize: 10,
+    fontFamily: 'Courier New',
     marginTop: 2,
   },
-  cardsContainer: {
+  shipsContainer: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
-  cardRow: {
+  shipRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  cardSlot: {
+  shipSlot: {
     alignItems: 'center',
     flex: 1,
   },
-  cardLabel: {
-    color: '#888888',
-    fontSize: 12,
+  shipLabel: {
+    color: '#64748B',
+    fontSize: 10,
+    fontFamily: 'Courier New',
     fontWeight: '600',
     marginBottom: 12,
   },
@@ -419,8 +450,12 @@ const styles = StyleSheet.create({
     width: 60,
   },
   vsText: {
-    color: '#FFD700',
-    fontSize: 18,
+    fontSize: 24,
+  },
+  vsSubtext: {
+    color: '#FBBF24',
+    fontSize: 12,
+    fontFamily: 'Courier New',
     fontWeight: '900',
     letterSpacing: 2,
   },
@@ -429,37 +464,38 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   resultText: {
-    fontSize: 24,
+    fontSize: 18,
+    fontFamily: 'Courier New',
     fontWeight: '900',
     letterSpacing: 2,
   },
   winText: {
-    color: '#00FF00',
+    color: '#22C55E',
   },
   loseText: {
-    color: '#FF4444',
+    color: '#EF4444',
   },
   tieText: {
-    color: '#FFD700',
+    color: '#FBBF24',
   },
   actionContainer: {
     paddingHorizontal: 40,
     paddingBottom: 40,
   },
   actionButton: {
-    backgroundColor: '#8B0000',
-    borderRadius: 12,
+    backgroundColor: 'rgba(30, 58, 138, 0.3)',
+    borderWidth: 2,
+    borderColor: '#FBBF24',
     paddingVertical: 16,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFD700',
   },
   disabledButton: {
     opacity: 0.5,
   },
   actionButtonText: {
-    color: '#FFD700',
-    fontSize: 18,
+    color: '#FBBF24',
+    fontSize: 16,
+    fontFamily: 'Courier New',
     fontWeight: '700',
     letterSpacing: 1,
   },
@@ -467,14 +503,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   gameOverText: {
-    color: '#FFD700',
-    fontSize: 28,
+    color: '#FBBF24',
+    fontSize: 20,
+    fontFamily: 'Courier New',
     fontWeight: '900',
     marginBottom: 8,
   },
   rewardText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: '#E2E8F0',
+    fontSize: 14,
+    fontFamily: 'Courier New',
     marginBottom: 20,
   },
 });

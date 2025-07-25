@@ -2,30 +2,31 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-interface Dealer {
+interface Admiral {
   name: string;
   avatar: string;
   difficulty: number;
   specialRule: string;
   winReward: number;
+  fleet?: string;
 }
 
 interface DealerPortraitProps {
-  dealer: Dealer;
+  dealer: Admiral;
 }
 
 export function DealerPortrait({ dealer }: DealerPortraitProps) {
-  const getDifficultyColor = (difficulty: number) => {
-    switch (difficulty) {
-      case 1: return '#00FF00';
-      case 2: return '#FFD700';
-      case 3: return '#FF4444';
-      default: return '#FFFFFF';
-    }
+  const getDifficultyStars = () => {
+    return '★'.repeat(dealer.difficulty) + '☆'.repeat(3 - dealer.difficulty);
   };
 
-  const getDifficultyStars = (difficulty: number) => {
-    return '★'.repeat(difficulty) + '☆'.repeat(3 - difficulty);
+  const getDifficultyColor = () => {
+    switch (dealer.difficulty) {
+      case 1: return '#22C55E';
+      case 2: return '#FBBF24';
+      case 3: return '#EF4444';
+      default: return '#64748B';
+    }
   };
 
   return (
@@ -34,29 +35,50 @@ export function DealerPortrait({ dealer }: DealerPortraitProps) {
       entering={FadeInDown.duration(600)}
     >
       <LinearGradient
-        colors={['rgba(255, 215, 0, 0.1)', 'rgba(139, 0, 0, 0.1)']}
-        style={styles.portraitContainer}
+        colors={['rgba(30, 58, 138, 0.2)', 'rgba(59, 130, 246, 0.1)']}
+        style={styles.portraitFrame}
       >
+        {/* Admiral Avatar */}
         <View style={styles.avatarContainer}>
           <Text style={styles.avatar}>{dealer.avatar}</Text>
+          <View style={styles.rankBadge}>
+            <Text style={styles.rankText}>ADM</Text>
+          </View>
         </View>
-        
+
+        {/* Admiral Info */}
         <View style={styles.infoContainer}>
-          <Text style={styles.dealerName}>{dealer.name}</Text>
+          <Text style={styles.name}>{dealer.name}</Text>
           
+          {/* Difficulty Rating */}
           <View style={styles.difficultyContainer}>
-            <Text style={[styles.difficultyStars, { color: getDifficultyColor(dealer.difficulty) }]}>
-              {getDifficultyStars(dealer.difficulty)}
+            <Text style={[styles.difficultyStars, { color: getDifficultyColor() }]}>
+              {getDifficultyStars()}
             </Text>
+            <Text style={styles.difficultyLabel}>THREAT LEVEL</Text>
           </View>
-          
-          <View style={styles.rewardContainer}>
-            <Text style={styles.rewardLabel}>WIN REWARD:</Text>
-            <View style={styles.chipReward}>
-              <Text style={styles.chipIcon}>🪙</Text>
-              <Text style={styles.rewardAmount}>{dealer.winReward}</Text>
+
+          {/* Fleet Info */}
+          {dealer.fleet && (
+            <View style={styles.fleetContainer}>
+              <Text style={styles.fleetLabel}>COMMANDING:</Text>
+              <Text style={styles.fleetName}>{dealer.fleet}</Text>
             </View>
+          )}
+
+          {/* Reward */}
+          <View style={styles.rewardContainer}>
+            <Text style={styles.rewardLabel}>BOUNTY:</Text>
+            <Text style={styles.rewardValue}>{dealer.winReward} CREDITS</Text>
           </View>
+        </View>
+
+        {/* Decorative Elements */}
+        <View style={styles.decorativeFrame}>
+          <Text style={styles.cornerDecor}>▲</Text>
+          <Text style={styles.cornerDecor}>▲</Text>
+          <Text style={styles.cornerDecor}>▲</Text>
+          <Text style={styles.cornerDecor}>▲</Text>
         </View>
       </LinearGradient>
     </Animated.View>
@@ -67,73 +89,108 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
   },
-  portraitContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
+  portraitFrame: {
+    borderWidth: 2,
+    borderColor: '#1E3A8A',
     padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
-    minWidth: 280,
+    alignItems: 'center',
+    position: 'relative',
+    minWidth: 200,
   },
   avatarContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFD700',
-    marginRight: 16,
+    position: 'relative',
+    marginBottom: 12,
   },
   avatar: {
-    fontSize: 32,
+    fontSize: 48,
+    textAlign: 'center',
+  },
+  rankBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    backgroundColor: '#1E3A8A',
+    borderWidth: 1,
+    borderColor: '#FBBF24',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  rankText: {
+    color: '#FBBF24',
+    fontSize: 8,
+    fontFamily: 'Courier New',
+    fontWeight: '600',
   },
   infoContainer: {
-    flex: 1,
+    alignItems: 'center',
+    gap: 8,
   },
-  dealerName: {
-    fontSize: 18,
+  name: {
+    color: '#E2E8F0',
+    fontSize: 16,
+    fontFamily: 'Courier New',
     fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    letterSpacing: 1,
+    textAlign: 'center',
   },
   difficultyContainer: {
-    marginBottom: 8,
+    alignItems: 'center',
   },
   difficultyStars: {
     fontSize: 16,
+    fontFamily: 'Courier New',
+    letterSpacing: 2,
+  },
+  difficultyLabel: {
+    color: '#64748B',
+    fontSize: 8,
+    fontFamily: 'Courier New',
+    marginTop: 2,
+  },
+  fleetContainer: {
+    alignItems: 'center',
+  },
+  fleetLabel: {
+    color: '#64748B',
+    fontSize: 8,
+    fontFamily: 'Courier New',
+  },
+  fleetName: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontFamily: 'Courier New',
     fontWeight: '600',
   },
   rewardContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    marginTop: 4,
   },
   rewardLabel: {
+    color: '#64748B',
+    fontSize: 8,
+    fontFamily: 'Courier New',
+  },
+  rewardValue: {
+    color: '#FBBF24',
     fontSize: 12,
-    fontWeight: '600',
-    color: '#888888',
-  },
-  chipReward: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FFD700',
-  },
-  chipIcon: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-  rewardAmount: {
-    fontSize: 14,
+    fontFamily: 'Courier New',
     fontWeight: '700',
-    color: '#FFD700',
+  },
+  decorativeFrame: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    right: 4,
+    bottom: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    pointerEvents: 'none',
+  },
+  cornerDecor: {
+    color: '#475569',
+    fontSize: 6,
+    fontFamily: 'Courier New',
+    position: 'absolute',
   },
 });

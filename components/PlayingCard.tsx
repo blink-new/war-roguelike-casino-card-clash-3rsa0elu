@@ -8,18 +8,19 @@ import Animated, {
   useEffect
 } from 'react-native-reanimated';
 
-interface Card {
-  suit: '♠' | '♥' | '♦' | '♣';
+interface Ship {
+  type: 'destroyer' | 'cruiser' | 'battleship' | 'carrier';
   value: number;
   display: string;
+  symbol: string;
 }
 
 interface PlayingCardProps {
-  card: Card;
+  ship: Ship;
   faceDown?: boolean;
 }
 
-export function PlayingCard({ card, faceDown = false }: PlayingCardProps) {
+export function PlayingCard({ ship, faceDown = false }: PlayingCardProps) {
   const flipValue = useSharedValue(faceDown ? 0 : 1);
 
   useEffect(() => {
@@ -45,53 +46,87 @@ export function PlayingCard({ card, faceDown = false }: PlayingCardProps) {
     };
   });
 
-  const isRed = card.suit === '♥' || card.suit === '♦';
+  const getShipColor = () => {
+    switch (ship.type) {
+      case 'destroyer': return '#64748B';
+      case 'cruiser': return '#3B82F6';
+      case 'battleship': return '#8B5CF6';
+      case 'carrier': return '#F59E0B';
+      default: return '#64748B';
+    }
+  };
+
+  const getShipRank = () => {
+    switch (ship.type) {
+      case 'destroyer': return 'DESTROYER';
+      case 'cruiser': return 'CRUISER';
+      case 'battleship': return 'BATTLESHIP';
+      case 'carrier': return 'CARRIER';
+      default: return 'VESSEL';
+    }
+  };
 
   return (
     <View style={styles.cardContainer}>
       {/* Card Back */}
       <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
         <LinearGradient
-          colors={['#8B0000', '#B22222', '#8B0000']}
+          colors={['#1E3A8A', '#3B82F6', '#1E3A8A']}
           style={styles.cardBackGradient}
         >
-          <Text style={styles.cardBackPattern}>♠♥♦♣</Text>
-          <Text style={styles.cardBackPattern}>♣♦♥♠</Text>
-          <Text style={styles.cardBackPattern}>♠♥♦♣</Text>
+          <View style={styles.radarGrid}>
+            <Text style={styles.radarText}>⚓ ⚓ ⚓</Text>
+            <Text style={styles.radarText}>⚓ ⚓ ⚓</Text>
+            <Text style={styles.radarText}>⚓ ⚓ ⚓</Text>
+          </View>
+          <Text style={styles.backLabel}>CLASSIFIED</Text>
         </LinearGradient>
       </Animated.View>
 
       {/* Card Front */}
       <Animated.View style={[styles.card, styles.cardFront, frontAnimatedStyle]}>
         <LinearGradient
-          colors={['#FFFFFF', '#F8F8F8']}
+          colors={['#0F172A', '#1E293B']}
           style={styles.cardFrontGradient}
         >
-          {/* Top Left */}
-          <View style={styles.topLeft}>
-            <Text style={[styles.cardValue, isRed && styles.redText]}>
-              {card.display}
-            </Text>
-            <Text style={[styles.cardSuit, isRed && styles.redText]}>
-              {card.suit}
+          {/* Ship Type Header */}
+          <View style={styles.shipHeader}>
+            <Text style={[styles.shipType, { color: getShipColor() }]}>
+              {getShipRank()}
             </Text>
           </View>
 
-          {/* Center */}
-          <View style={styles.center}>
-            <Text style={[styles.centerSuit, isRed && styles.redText]}>
-              {card.suit}
+          {/* Ship Value Display */}
+          <View style={styles.valueContainer}>
+            <Text style={[styles.shipValue, { color: getShipColor() }]}>
+              {ship.display}
             </Text>
           </View>
 
-          {/* Bottom Right (rotated) */}
-          <View style={styles.bottomRight}>
-            <Text style={[styles.cardValue, styles.rotated, isRed && styles.redText]}>
-              {card.display}
-            </Text>
-            <Text style={[styles.cardSuit, styles.rotated, isRed && styles.redText]}>
-              {card.suit}
-            </Text>
+          {/* Ship Symbol */}
+          <View style={styles.symbolContainer}>
+            <Text style={styles.shipSymbol}>{ship.symbol}</Text>
+          </View>
+
+          {/* Power Level Bars */}
+          <View style={styles.powerBars}>
+            {Array.from({ length: Math.min(ship.value, 14) }, (_, i) => (
+              <View 
+                key={i} 
+                style={[
+                  styles.powerBar,
+                  { backgroundColor: getShipColor() }
+                ]} 
+              />
+            ))}
+          </View>
+
+          {/* Corner Decorations */}
+          <View style={styles.cornerTL}>
+            <Text style={styles.cornerText}>▲</Text>
+          </View>
+          <View style={styles.cornerBR}>
+            <Text style={styles.cornerText}>▼</Text>
           </View>
         </LinearGradient>
       </Animated.View>
@@ -101,17 +136,17 @@ export function PlayingCard({ card, faceDown = false }: PlayingCardProps) {
 
 const styles = StyleSheet.create({
   cardContainer: {
-    width: 80,
-    height: 112,
+    width: 90,
+    height: 120,
     position: 'relative',
   },
   card: {
     position: 'absolute',
     width: '100%',
     height: '100%',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
+    borderWidth: 2,
+    borderColor: '#475569',
+    backgroundColor: '#1E293B',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -127,59 +162,84 @@ const styles = StyleSheet.create({
   },
   cardBackGradient: {
     flex: 1,
-    borderRadius: 7,
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 8,
+    padding: 8,
   },
-  cardBackPattern: {
-    color: '#FFD700',
-    fontSize: 16,
-    fontWeight: '600',
+  radarGrid: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  radarText: {
+    color: '#FBBF24',
+    fontSize: 12,
+    fontFamily: 'Courier New',
     letterSpacing: 2,
     opacity: 0.8,
   },
+  backLabel: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontFamily: 'Courier New',
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
   cardFrontGradient: {
     flex: 1,
-    borderRadius: 7,
     position: 'relative',
+    padding: 8,
   },
-  topLeft: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
+  shipHeader: {
     alignItems: 'center',
+    marginBottom: 8,
   },
-  bottomRight: {
-    position: 'absolute',
-    bottom: 6,
-    right: 6,
+  shipType: {
+    fontSize: 8,
+    fontFamily: 'Courier New',
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
+  valueContainer: {
     alignItems: 'center',
+    marginBottom: 8,
   },
-  center: {
-    flex: 1,
+  shipValue: {
+    fontSize: 24,
+    fontFamily: 'Courier New',
+    fontWeight: '900',
+  },
+  symbolContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  shipSymbol: {
+    fontSize: 20,
+  },
+  powerBars: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: 2,
   },
-  cardValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#000000',
-    lineHeight: 16,
+  powerBar: {
+    width: 4,
+    height: 4,
+    backgroundColor: '#64748B',
   },
-  cardSuit: {
-    fontSize: 12,
-    color: '#000000',
-    lineHeight: 14,
+  cornerTL: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
   },
-  centerSuit: {
-    fontSize: 32,
-    color: '#000000',
-  },
-  redText: {
-    color: '#DC143C',
-  },
-  rotated: {
+  cornerBR: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
     transform: [{ rotate: '180deg' }],
+  },
+  cornerText: {
+    color: '#475569',
+    fontSize: 8,
+    fontFamily: 'Courier New',
   },
 });

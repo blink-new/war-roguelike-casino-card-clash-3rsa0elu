@@ -14,252 +14,268 @@ interface ShopItem {
   name: string;
   description: string;
   price: number;
-  type: 'card' | 'joker' | 'upgrade';
-  icon: string;
+  type: 'equipment' | 'upgrade' | 'vessel';
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  icon: string;
   effect: string;
 }
 
 const shopItems: ShopItem[] = [
   {
-    id: 'double_draw',
-    name: 'Double Draw',
-    description: 'Draw 2 cards, play the higher one',
+    id: 'radar_boost',
+    name: 'Advanced Radar',
+    description: 'Reveals enemy cards 0.5s earlier',
     price: 50,
-    type: 'joker',
-    icon: '🎭',
-    rarity: 'rare',
-    effect: 'Next War: Draw 2, play higher',
+    type: 'equipment',
+    rarity: 'common',
+    icon: '📡',
+    effect: '+0.5s preview time',
   },
   {
-    id: 'ace_high',
-    name: 'Ace Supremacy',
-    description: 'All your Aces beat any card',
+    id: 'armor_plating',
+    name: 'Reinforced Hull',
+    description: 'Ties now favor your fleet',
     price: 75,
-    type: 'joker',
-    icon: '👑',
-    rarity: 'epic',
-    effect: 'Aces always win',
-  },
-  {
-    id: 'tie_breaker',
-    name: 'Tie Breaker',
-    description: 'All ties go to you',
-    price: 40,
-    type: 'joker',
-    icon: '⚖️',
+    type: 'upgrade',
     rarity: 'rare',
+    icon: '🛡️',
     effect: 'Win all ties',
   },
   {
-    id: 'lucky_seven',
-    name: 'Lucky Seven',
-    description: 'All 7s become Aces',
-    price: 30,
-    type: 'card',
-    icon: '🍀',
-    rarity: 'common',
-    effect: '7s → Aces',
-  },
-  {
-    id: 'mirror_card',
-    name: 'Mirror Card',
-    description: 'Copy opponent\'s card value +1',
+    id: 'torpedo_tubes',
+    name: 'Torpedo Launcher',
+    description: 'Low cards (2-6) now beat high cards',
     price: 100,
-    type: 'joker',
-    icon: '🪞',
-    rarity: 'legendary',
-    effect: 'Copy + 1',
+    type: 'equipment',
+    rarity: 'epic',
+    icon: '🚀',
+    effect: 'Reverse card values',
   },
   {
-    id: 'chip_multiplier',
-    name: 'Chip Multiplier',
-    description: 'Double all chip rewards',
+    id: 'flagship',
+    name: 'Command Flagship',
+    description: 'Draw 2 cards, choose the better one',
+    price: 150,
+    type: 'vessel',
+    rarity: 'legendary',
+    icon: '🚁',
+    effect: 'Double draw advantage',
+  },
+  {
+    id: 'sonar_array',
+    name: 'Sonar Array',
+    description: 'See next 3 enemy cards',
     price: 80,
+    type: 'equipment',
+    rarity: 'rare',
+    icon: '🔊',
+    effect: 'Future sight x3',
+  },
+  {
+    id: 'naval_academy',
+    name: 'Naval Academy',
+    description: 'Permanently +1 to all card values',
+    price: 200,
     type: 'upgrade',
-    icon: '💰',
-    rarity: 'epic',
-    effect: '2x chip rewards',
+    rarity: 'legendary',
+    icon: '🎓',
+    effect: '+1 to all cards',
   },
 ];
 
 export function ShopScreen({ onNavigate, chips, setChips }: ShopScreenProps) {
   const [purchasedItems, setPurchasedItems] = useState<string[]>([]);
 
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'common': return '#FFFFFF';
-      case 'rare': return '#4A90E2';
-      case 'epic': return '#9B59B6';
-      case 'legendary': return '#FFD700';
-      default: return '#FFFFFF';
-    }
-  };
-
-  const getRarityGradient = (rarity: string) => {
-    switch (rarity) {
-      case 'common': return ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)'];
-      case 'rare': return ['rgba(74, 144, 226, 0.2)', 'rgba(74, 144, 226, 0.1)'];
-      case 'epic': return ['rgba(155, 89, 182, 0.2)', 'rgba(155, 89, 182, 0.1)'];
-      case 'legendary': return ['rgba(255, 215, 0, 0.2)', 'rgba(255, 215, 0, 0.1)'];
-      default: return ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)'];
-    }
-  };
-
   const handlePurchase = (item: ShopItem) => {
-    if (chips < item.price) {
-      Alert.alert('Insufficient Chips', `You need ${item.price} chips to buy this item.`);
-      return;
+    if (chips >= item.price && !purchasedItems.includes(item.id)) {
+      setChips(chips - item.price);
+      setPurchasedItems([...purchasedItems, item.id]);
+      Alert.alert(
+        'Equipment Acquired!',
+        `${item.name} has been added to your fleet.`,
+        [{ text: 'Roger that!', style: 'default' }]
+      );
+    } else if (purchasedItems.includes(item.id)) {
+      Alert.alert('Already Owned', 'This equipment is already installed on your fleet.');
+    } else {
+      Alert.alert('Insufficient Credits', 'You need more credits to purchase this equipment.');
     }
-
-    if (purchasedItems.includes(item.id)) {
-      Alert.alert('Already Owned', 'You already own this item.');
-      return;
-    }
-
-    Alert.alert(
-      'Confirm Purchase',
-      `Buy ${item.name} for ${item.price} chips?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Buy',
-          onPress: () => {
-            setChips(chips - item.price);
-            setPurchasedItems(prev => [...prev, item.id]);
-          },
-        },
-      ]
-    );
   };
 
   return (
     <LinearGradient
-      colors={['#000000', '#0F0F0F', '#1A0000']}
+      colors={['#020617', '#0F172A', '#1E293B']}
       style={styles.container}
     >
-      {/* Header */}
-      <Animated.View 
-        style={styles.header}
-        entering={FadeInUp.duration(600)}
-      >
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => onNavigate('menu')}
-        >
-          <Text style={styles.backButtonText}>← BACK</Text>
-        </TouchableOpacity>
-        
-        <Text style={styles.headerTitle}>CASINO SHOP</Text>
-        
-        <View style={styles.chipContainer}>
-          <Text style={styles.chipIcon}>🪙</Text>
-          <Text style={styles.chipText}>{chips}</Text>
-        </View>
-      </Animated.View>
-
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Shop Description */}
+      <View style={styles.crtBorder}>
+        {/* Header */}
         <Animated.View 
-          style={styles.descriptionContainer}
-          entering={FadeInDown.duration(600).delay(100)}
+          style={styles.header}
+          entering={FadeInUp.duration(600)}
         >
-          <Text style={styles.descriptionText}>
-            Enhance your deck with powerful cards, game-changing jokers, and permanent upgrades
-          </Text>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => onNavigate('menu')}
+          >
+            <Text style={styles.backButtonText}>◄ COMMAND</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.title}>ARMORY</Text>
+          
+          <View style={styles.chipContainer}>
+            <Text style={styles.chipIcon}>⚓</Text>
+            <Text style={styles.chipText}>{chips}</Text>
+          </View>
         </Animated.View>
 
-        {/* Shop Items */}
-        <Animated.View 
-          style={styles.itemsContainer}
-          entering={FadeInDown.duration(600).delay(200)}
-        >
-          {shopItems.map((item, index) => {
-            const isOwned = purchasedItems.includes(item.id);
-            const canAfford = chips >= item.price;
+        {/* Shop Content */}
+        <ScrollView style={styles.shopContainer} showsVerticalScrollIndicator={false}>
+          <Animated.View 
+            style={styles.shopHeader}
+            entering={FadeInDown.duration(600).delay(100)}
+          >
+            <Text style={styles.shopTitle}>NAVAL EQUIPMENT</Text>
+            <Text style={styles.shopSubtitle}>Upgrade your fleet capabilities</Text>
+          </Animated.View>
 
-            return (
-              <TouchableOpacity
+          {/* Shop Items */}
+          <View style={styles.itemsContainer}>
+            {shopItems.map((item, index) => (
+              <Animated.View
                 key={item.id}
-                style={[
-                  styles.shopItem,
-                  isOwned && styles.ownedItem,
-                  !canAfford && !isOwned && styles.unaffordableItem,
-                ]}
-                onPress={() => !isOwned && handlePurchase(item)}
-                disabled={isOwned}
+                entering={FadeInDown.duration(600).delay(200 + index * 100)}
               >
-                <LinearGradient
-                  colors={getRarityGradient(item.rarity)}
-                  style={styles.itemGradient}
-                >
-                  <View style={styles.itemHeader}>
-                    <View style={styles.itemIconContainer}>
-                      <Text style={styles.itemIcon}>{item.icon}</Text>
-                    </View>
-                    
-                    <View style={styles.itemInfo}>
-                      <Text style={[
-                        styles.itemName,
-                        { color: getRarityColor(item.rarity) }
-                      ]}>
-                        {item.name}
-                      </Text>
-                      <Text style={styles.itemType}>
-                        {item.type.toUpperCase()} • {item.rarity.toUpperCase()}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.priceContainer}>
-                      {isOwned ? (
-                        <View style={styles.ownedBadge}>
-                          <Text style={styles.ownedText}>OWNED</Text>
-                        </View>
-                      ) : (
-                        <View style={[
-                          styles.priceChip,
-                          !canAfford && styles.unaffordablePrice
-                        ]}>
-                          <Text style={styles.chipIcon}>🪙</Text>
-                          <Text style={[
-                            styles.priceText,
-                            !canAfford && styles.unaffordablePriceText
-                          ]}>
-                            {item.price}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                  
-                  <Text style={styles.itemDescription}>{item.description}</Text>
-                  
-                  <View style={styles.effectContainer}>
-                    <Text style={styles.effectLabel}>EFFECT:</Text>
-                    <Text style={styles.effectText}>{item.effect}</Text>
-                  </View>
-                  
-                  {isOwned && (
-                    <View style={styles.ownedOverlay}>
-                      <Text style={styles.ownedIcon}>✓</Text>
-                    </View>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-            );
-          })}
-        </Animated.View>
+                <ShopItemCard 
+                  item={item} 
+                  onPurchase={() => handlePurchase(item)}
+                  canAfford={chips >= item.price}
+                  isPurchased={purchasedItems.includes(item.id)}
+                />
+              </Animated.View>
+            ))}
+          </View>
 
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+          {/* Shop Footer */}
+          <Animated.View 
+            style={styles.shopFooter}
+            entering={FadeInDown.duration(600).delay(800)}
+          >
+            <Text style={styles.footerText}>Equipment effects are permanent upgrades</Text>
+            <Text style={styles.footerSubtext}>Win battles to earn more credits</Text>
+          </Animated.View>
+        </ScrollView>
+      </View>
     </LinearGradient>
+  );
+}
+
+function ShopItemCard({ 
+  item, 
+  onPurchase, 
+  canAfford, 
+  isPurchased 
+}: { 
+  item: ShopItem; 
+  onPurchase: () => void; 
+  canAfford: boolean;
+  isPurchased: boolean;
+}) {
+  const getRarityColor = () => {
+    switch (item.rarity) {
+      case 'common': return '#64748B';
+      case 'rare': return '#3B82F6';
+      case 'epic': return '#8B5CF6';
+      case 'legendary': return '#F59E0B';
+      default: return '#64748B';
+    }
+  };
+
+  const getRarityBorder = () => {
+    switch (item.rarity) {
+      case 'common': return '#475569';
+      case 'rare': return '#3B82F6';
+      case 'epic': return '#8B5CF6';
+      case 'legendary': return '#F59E0B';
+      default: return '#475569';
+    }
+  };
+
+  return (
+    <TouchableOpacity 
+      onPress={onPurchase}
+      disabled={isPurchased || !canAfford}
+      style={[
+        styles.itemCard,
+        { borderColor: getRarityBorder() },
+        isPurchased && styles.purchasedCard,
+        !canAfford && !isPurchased && styles.unaffordableCard,
+      ]}
+    >
+      <LinearGradient
+        colors={isPurchased 
+          ? ['rgba(34, 197, 94, 0.1)', 'rgba(22, 163, 74, 0.05)']
+          : ['rgba(30, 58, 138, 0.2)', 'rgba(59, 130, 246, 0.1)']
+        }
+        style={styles.cardGradient}
+      >
+        {/* Item Header */}
+        <View style={styles.itemHeader}>
+          <View style={styles.itemIcon}>
+            <Text style={styles.iconText}>{item.icon}</Text>
+          </View>
+          
+          <View style={styles.itemInfo}>
+            <Text style={[styles.itemName, { color: getRarityColor() }]}>
+              {item.name}
+            </Text>
+            <Text style={styles.itemType}>
+              {item.type.toUpperCase()} • {item.rarity.toUpperCase()}
+            </Text>
+          </View>
+
+          <View style={styles.priceContainer}>
+            <Text style={styles.priceValue}>{item.price}</Text>
+            <Text style={styles.priceIcon}>⚓</Text>
+          </View>
+        </View>
+
+        {/* Item Description */}
+        <Text style={styles.itemDescription}>{item.description}</Text>
+
+        {/* Item Effect */}
+        <View style={styles.effectContainer}>
+          <Text style={styles.effectLabel}>EFFECT:</Text>
+          <Text style={[styles.effectText, { color: getRarityColor() }]}>
+            {item.effect}
+          </Text>
+        </View>
+
+        {/* Purchase Status */}
+        <View style={styles.statusContainer}>
+          {isPurchased ? (
+            <Text style={styles.purchasedText}>✓ EQUIPPED</Text>
+          ) : canAfford ? (
+            <Text style={styles.availableText}>► PURCHASE</Text>
+          ) : (
+            <Text style={styles.unavailableText}>INSUFFICIENT CREDITS</Text>
+          )}
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  crtBorder: {
+    flex: 1,
+    margin: 8,
+    borderWidth: 4,
+    borderColor: '#1E3A8A',
+    borderRadius: 12,
+    backgroundColor: 'rgba(30, 58, 138, 0.1)',
   },
   header: {
     flexDirection: 'row',
@@ -271,179 +287,184 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    borderWidth: 1,
+    borderColor: '#475569',
   },
   backButtonText: {
-    color: '#FFD700',
-    fontSize: 16,
+    color: '#FBBF24',
+    fontSize: 14,
+    fontFamily: 'Courier New',
     fontWeight: '600',
   },
-  headerTitle: {
-    color: '#FFFFFF',
+  title: {
+    color: '#E2E8F0',
     fontSize: 18,
+    fontFamily: 'Courier New',
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
   chipContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    backgroundColor: 'rgba(251, 191, 36, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#FFD700',
+    borderWidth: 2,
+    borderColor: '#FBBF24',
   },
   chipIcon: {
     fontSize: 16,
     marginRight: 6,
+    color: '#FBBF24',
   },
   chipText: {
     fontSize: 16,
+    fontFamily: 'Courier New',
     fontWeight: '700',
-    color: '#FFD700',
+    color: '#FBBF24',
   },
-  scrollContainer: {
+  shopContainer: {
     flex: 1,
-  },
-  descriptionContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
   },
-  descriptionText: {
-    color: '#CCCCCC',
-    fontSize: 14,
-    textAlign: 'center',
-    fontStyle: 'italic',
-    lineHeight: 20,
+  shopHeader: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  shopTitle: {
+    color: '#FBBF24',
+    fontSize: 20,
+    fontFamily: 'Courier New',
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  shopSubtitle: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontFamily: 'Courier New',
+    marginTop: 4,
   },
   itemsContainer: {
-    paddingHorizontal: 20,
+    gap: 16,
+    marginBottom: 30,
   },
-  shopItem: {
-    marginBottom: 16,
-    borderRadius: 12,
+  itemCard: {
+    borderWidth: 2,
     overflow: 'hidden',
   },
-  ownedItem: {
-    opacity: 0.7,
+  purchasedCard: {
+    opacity: 0.8,
   },
-  unaffordableItem: {
+  unaffordableCard: {
     opacity: 0.5,
   },
-  itemGradient: {
+  cardGradient: {
     padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    position: 'relative',
   },
   itemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
-  itemIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  itemIcon: {
+    width: 40,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#475569',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  itemIcon: {
-    fontSize: 24,
+  iconText: {
+    fontSize: 20,
   },
   itemInfo: {
     flex: 1,
   },
   itemName: {
-    fontSize: 16,
+    fontSize: 14,
+    fontFamily: 'Courier New',
     fontWeight: '700',
     marginBottom: 2,
   },
   itemType: {
-    fontSize: 12,
-    color: '#888888',
-    fontWeight: '600',
+    color: '#64748B',
+    fontSize: 10,
+    fontFamily: 'Courier New',
   },
   priceContainer: {
-    alignItems: 'flex-end',
-  },
-  priceChip: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FFD700',
   },
-  unaffordablePrice: {
-    backgroundColor: 'rgba(255, 68, 68, 0.1)',
-    borderColor: '#FF4444',
-  },
-  priceText: {
-    fontSize: 14,
+  priceValue: {
+    color: '#FBBF24',
+    fontSize: 16,
+    fontFamily: 'Courier New',
     fontWeight: '700',
-    color: '#FFD700',
   },
-  unaffordablePriceText: {
-    color: '#FF4444',
-  },
-  ownedBadge: {
-    backgroundColor: 'rgba(0, 255, 0, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#00FF00',
-  },
-  ownedText: {
+  priceIcon: {
+    color: '#FBBF24',
     fontSize: 12,
-    fontWeight: '700',
-    color: '#00FF00',
   },
   itemDescription: {
-    color: '#CCCCCC',
-    fontSize: 14,
-    lineHeight: 18,
+    color: '#E2E8F0',
+    fontSize: 12,
+    fontFamily: 'Courier New',
     marginBottom: 8,
+    lineHeight: 16,
   },
   effectContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
   },
   effectLabel: {
-    color: '#888888',
-    fontSize: 12,
-    fontWeight: '600',
+    color: '#64748B',
+    fontSize: 10,
+    fontFamily: 'Courier New',
     marginRight: 8,
   },
   effectText: {
-    color: '#FFD700',
-    fontSize: 12,
+    fontSize: 10,
+    fontFamily: 'Courier New',
     fontWeight: '600',
-    flex: 1,
   },
-  ownedOverlay: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#00FF00',
-    justifyContent: 'center',
+  statusContainer: {
     alignItems: 'center',
   },
-  ownedIcon: {
-    color: '#FFFFFF',
-    fontSize: 14,
+  purchasedText: {
+    color: '#22C55E',
+    fontSize: 12,
+    fontFamily: 'Courier New',
     fontWeight: '700',
   },
-  bottomSpacing: {
-    height: 40,
+  availableText: {
+    color: '#FBBF24',
+    fontSize: 12,
+    fontFamily: 'Courier New',
+    fontWeight: '700',
+  },
+  unavailableText: {
+    color: '#EF4444',
+    fontSize: 10,
+    fontFamily: 'Courier New',
+  },
+  shopFooter: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#475569',
+  },
+  footerText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontFamily: 'Courier New',
+    textAlign: 'center',
+  },
+  footerSubtext: {
+    color: '#64748B',
+    fontSize: 10,
+    fontFamily: 'Courier New',
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
